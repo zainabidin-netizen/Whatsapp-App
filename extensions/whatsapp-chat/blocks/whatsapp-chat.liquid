@@ -1,0 +1,56 @@
+{% liquid
+  assign phone = block.settings.phone | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
+  assign non_digits = phone | remove: '0' | remove: '1' | remove: '2' | remove: '3' | remove: '4' | remove: '5' | remove: '6' | remove: '7' | remove: '8' | remove: '9'
+  assign first_digit = phone | slice: 0
+  assign phone_valid = true
+  if non_digits != blank or first_digit == '0' or phone.size < 8 or phone.size > 15
+    assign phone_valid = false
+  endif
+  assign encoded_message = block.settings.message | url_encode | replace: '+', '%20'
+  assign label = block.settings.label | strip | default: 'Chat with us'
+%}
+{% if phone != blank and phone_valid %}
+  <a
+    class="wa-chat wa-chat--{{ block.settings.position }}{% unless block.settings.show_label %} wa-chat--icon-only{% endunless %}{% unless block.settings.show_mobile %} wa-chat--hide-mobile{% endunless %}{% unless block.settings.show_desktop %} wa-chat--hide-desktop{% endunless %}"
+    href="https://wa.me/{{ phone }}{% if encoded_message != blank %}?text={{ encoded_message | escape }}{% endif %}"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="{{ label | escape }} (opens WhatsApp)"
+    style="--wa-background: {{ block.settings.background }}; --wa-foreground: {{ block.settings.foreground }}; --wa-bottom: {{ block.settings.bottom_offset }}px;"
+    {{ block.shopify_attributes }}
+  >
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M21 11.5a9 9 0 0 1-13.3 7.9L3 21l1.6-4.7A9 9 0 1 1 21 11.5Z"/>
+      <path d="M8 7.5c-.5 3.8 2.7 7 6.5 7l1-2-2-1-.8 1c-1.5-.6-2.6-1.7-3.2-3.2l1-.8-1-2Z"/>
+    </svg>
+    {% if block.settings.show_label %}<span>{{ label | escape }}</span>{% endif %}
+  </a>
+{% elsif request.design_mode %}
+  <div class="wa-chat-setup" {{ block.shopify_attributes }}>
+    {% if phone == blank %}
+      WhatsApp Chat: add your WhatsApp phone number in this app embed’s settings.
+    {% else %}
+      WhatsApp Chat: “{{ block.settings.phone | escape }}” isn’t a valid WhatsApp number. Use the country code followed by the number, digits only, with no leading zero (for example 923001234567).
+    {% endif %}
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "WhatsApp Chat",
+  "target": "body",
+  "stylesheet": "whatsapp-chat.css",
+  "settings": [
+    { "type": "text", "id": "phone", "label": "WhatsApp phone number", "info": "Include country code, using digits only. Pakistan example: 923001234567. Do not include the local leading zero." },
+    { "type": "textarea", "id": "message", "label": "Default message", "default": "Hi! I have a question about your products." },
+    { "type": "text", "id": "label", "label": "Button label", "default": "Chat with us" },
+    { "type": "checkbox", "id": "show_label", "label": "Show button label", "default": true },
+    { "type": "select", "id": "position", "label": "Position", "options": [{ "value": "right", "label": "Bottom right" }, { "value": "left", "label": "Bottom left" }], "default": "right" },
+    { "type": "color", "id": "background", "label": "Background colour", "default": "#075E54" },
+    { "type": "color", "id": "foreground", "label": "Icon and text colour", "default": "#FFFFFF" },
+    { "type": "range", "id": "bottom_offset", "label": "Distance from bottom", "min": 16, "max": 160, "step": 4, "unit": "px", "default": 24 },
+    { "type": "checkbox", "id": "show_mobile", "label": "Show on mobile", "default": true },
+    { "type": "checkbox", "id": "show_desktop", "label": "Show on desktop", "default": true }
+  ]
+}
+{% endschema %}
