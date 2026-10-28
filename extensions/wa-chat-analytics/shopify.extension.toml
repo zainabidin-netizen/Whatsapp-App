@@ -1,0 +1,23 @@
+name = "wa-chat-analytics"
+type = "web_pixel_extension"
+uid = "a09c30ff-c233-c30e-c434-f514b10cc8cf500fbc48"
+
+runtime_context = "strict"
+
+# Widget usage statistics only: runs when the customer allows analytics, never for marketing or data sale.
+[customer_privacy]
+analytics = true
+marketing = false
+preferences = false
+sale_of_data = "disabled"
+
+[settings]
+type = "object"
+
+[settings.fields.endpoint]
+name = "Event endpoint"
+description = "URL of the WhatsApp Chat Pro app that receives widget events. Set by the app."
+type = "single_line_text_field"
+validations = [
+  { name = "min", value = "1" }
+]

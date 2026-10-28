@@ -1,0 +1,42 @@
+{
+  "wa_chat": {
+    "status": {
+      "online": "Online",
+      "away": "Abwesend",
+      "open_24_hours": "Rund um die Uhr geöffnet"
+    },
+    "agents": {
+      "online_heading": "Chat starten",
+      "offline_heading": "WhatsApp-Nachricht hinterlassen",
+      "opens_whatsapp": "öffnet WhatsApp"
+    },
+    "quick": {
+      "heading": "Schnelle Fragen"
+    },
+    "tabs": {
+      "label": "Chat-Optionen",
+      "chat": "Chat",
+      "faq": "FAQ"
+    },
+    "faq": {
+      "search_label": "Fragen durchsuchen",
+      "search_placeholder": "Suchen…",
+      "result_count": "Passende Fragen: {{ number }}",
+      "no_results": "Keine passenden Fragen. Versuche andere Wörter oder chatte mit uns.",
+      "contact_heading": "Noch Fragen?",
+      "contact_button": "Auf WhatsApp chatten"
+    },
+    "general": {
+      "close": "Chat schließen"
+    },
+    "defaults": {
+      "greeting_title": "Brauchst du Hilfe?",
+      "greeting_text": "Chatte mit unserem Team auf WhatsApp. Wähle, mit wem du sprechen möchtest.",
+      "button_label": "Chatte mit uns",
+      "default_message": "Hallo! Ich habe eine Frage zu euren Produkten.",
+      "product_message": "Hallo! Ich habe eine Frage zu [product_title]: [product_url]",
+      "offline_message": "Wir sind gerade nicht erreichbar. Unsere Öffnungszeiten: [hours]. Schreib uns eine WhatsApp-Nachricht – wir antworten, sobald wir zurück sind.",
+      "your_products": "euren Produkten"
+    }
+  }
+}

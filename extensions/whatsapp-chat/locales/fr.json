@@ -1,0 +1,42 @@
+{
+  "wa_chat": {
+    "status": {
+      "online": "En ligne",
+      "away": "Absent",
+      "open_24_hours": "Ouvert 24 h/24"
+    },
+    "agents": {
+      "online_heading": "Démarrer une discussion",
+      "offline_heading": "Laisser un message WhatsApp",
+      "opens_whatsapp": "ouvre WhatsApp"
+    },
+    "quick": {
+      "heading": "Questions rapides"
+    },
+    "tabs": {
+      "label": "Options de discussion",
+      "chat": "Discussion",
+      "faq": "FAQ"
+    },
+    "faq": {
+      "search_label": "Rechercher une question",
+      "search_placeholder": "Rechercher…",
+      "result_count": "Questions correspondantes : {{ number }}",
+      "no_results": "Aucune question ne correspond. Essayez d’autres mots ou écrivez-nous.",
+      "contact_heading": "Besoin d’aide supplémentaire ?",
+      "contact_button": "Discuter sur WhatsApp"
+    },
+    "general": {
+      "close": "Fermer la discussion"
+    },
+    "defaults": {
+      "greeting_title": "Besoin d’aide ?",
+      "greeting_text": "Discutez avec notre équipe sur WhatsApp. Choisissez votre interlocuteur.",
+      "button_label": "Discutez avec nous",
+      "default_message": "Bonjour ! J’ai une question sur vos produits.",
+      "product_message": "Bonjour ! J’ai une question sur [product_title] : [product_url]",
+      "offline_message": "Nous sommes actuellement absents. Nos horaires : [hours]. Laissez-nous un message WhatsApp et nous vous répondrons à notre retour.",
+      "your_products": "vos produits"
+    }
+  }
+}

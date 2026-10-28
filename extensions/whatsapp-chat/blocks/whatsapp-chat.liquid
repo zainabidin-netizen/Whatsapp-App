@@ -1,32 +1,95 @@
 {% liquid
-  assign message = block.settings.message
-  if template.name == 'product' and product and block.settings.product_message_enabled
-    assign product_url = request.origin | append: product.url
-    assign message = block.settings.product_message | replace: '[product_title]', product.title | replace: '[product_url]', product_url
-  endif
-  assign encoded_message = message | strip | url_encode | replace: '+', '%20'
-  assign label = block.settings.label | strip | default: 'Chat with us'
+  assign text = shop.metaobjects['$app:wa_widget_text']['default']
+  assign fallback = 'wa_chat.defaults.greeting_title' | t
+  assign greeting_title = text.greeting_title.value | strip | default: fallback
+  assign fallback = 'wa_chat.defaults.greeting_text' | t
+  assign greeting_text = text.greeting_text.value | strip | default: fallback
+  assign fallback = 'wa_chat.defaults.button_label' | t
+  assign label = text.button_label.value | strip | default: fallback
+  assign fallback = 'wa_chat.defaults.offline_message' | t
+  assign offline_message = text.offline_message.value | strip | default: fallback
+  assign fallback = 'wa_chat.defaults.default_message' | t
+  assign message = text.default_message.value | strip | default: fallback
 
-  assign valid_agents = 0
-  assign agent_errors = ''
-  for i in (1..3)
-    assign key_phone = 'agent_' | append: i | append: '_phone'
-    assign key_name = 'agent_' | append: i | append: '_name'
-    assign raw_phone = block.settings[key_phone] | strip
-    if raw_phone == blank
-      continue
+  assign product_title = 'wa_chat.defaults.your_products' | t
+  assign product_url = request.origin
+  if template.name == 'product' and product
+    assign product_title = product.title
+    assign product_url = request.origin | append: product.url
+    if block.settings.product_message_enabled
+      assign fallback = 'wa_chat.defaults.product_message' | t
+      assign message = text.product_message.value | strip | default: fallback
     endif
-    assign phone = raw_phone | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
+  endif
+  assign message = message | replace: '[product_title]', product_title | replace: '[product_url]', product_url
+  assign encoded_message = message | url_encode | replace: '+', '%20'
+
+  assign lang = request.locale.iso_code | split: '-' | first
+  assign dir = 'ltr'
+  if lang == 'ar' or lang == 'ur' or lang == 'fa' or lang == 'he'
+    assign dir = 'rtl'
+  endif
+
+  assign background = block.settings.background
+  assign foreground = block.settings.foreground
+  assign contrast = background | color_contrast: foreground
+  assign contrast_adjusted = false
+  if contrast < 4.5
+    assign contrast_adjusted = true
+    assign contrast_light = background | color_contrast: '#ffffff'
+    assign contrast_dark = background | color_contrast: '#111111'
+    if contrast_dark > contrast_light
+      assign foreground = '#111111'
+    else
+      assign foreground = '#ffffff'
+    endif
+  endif
+
+  assign agent_keys = ''
+  for entry in shop.metaobjects['$app:wa_agent'].values
+    assign sort_key = entry.position.value | default: 0 | plus: 1000
+    assign agent_keys = agent_keys | append: sort_key | append: '|' | append: entry.system.handle | append: ','
+  endfor
+  assign agent_keys = agent_keys | split: ',' | sort
+
+  assign valid_agent_handles = ''
+  assign first_phone = ''
+  assign agent_errors = ''
+  for key in agent_keys
+    assign handle = key | split: '|' | last
+    assign agent = shop.metaobjects['$app:wa_agent'][handle]
+    assign phone = agent.phone.value | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
     assign non_digits = phone | remove: '0' | remove: '1' | remove: '2' | remove: '3' | remove: '4' | remove: '5' | remove: '6' | remove: '7' | remove: '8' | remove: '9'
     assign first_digit = phone | slice: 0
-    if non_digits != blank or first_digit == '0' or phone.size < 8 or phone.size > 15
-      assign agent_name = block.settings[key_name] | default: 'Agent' | escape
-      assign safe_phone = raw_phone | escape
-      assign agent_errors = agent_errors | append: '<li>' | append: agent_name | append: ': “' | append: safe_phone | append: '”</li>'
-    else
-      assign valid_agents = valid_agents | plus: 1
+    if phone == blank or non_digits != blank or first_digit == '0' or phone.size < 8 or phone.size > 15
+      assign safe_name = agent.name.value | escape
+      assign agent_errors = agent_errors | append: '<li>' | append: safe_name | append: '</li>'
+      continue
+    endif
+    assign valid_agent_handles = valid_agent_handles | append: handle | append: ','
+    if first_phone == blank
+      assign first_phone = phone
     endif
   endfor
+  assign valid_agent_handles = valid_agent_handles | split: ','
+
+  assign question_keys = ''
+  for entry in shop.metaobjects['$app:wa_quick_question'].values
+    assign sort_key = entry.position.value | default: 0 | plus: 1000
+    assign question_keys = question_keys | append: sort_key | append: '|' | append: entry.system.handle | append: ','
+  endfor
+  assign question_keys = question_keys | split: ',' | sort
+
+  assign faq_keys = ''
+  for entry in shop.metaobjects['$app:wa_faq'].values
+    assign sort_key = entry.position.value | default: 0 | plus: 1000
+    assign faq_keys = faq_keys | append: sort_key | append: '|' | append: entry.system.handle | append: ','
+  endfor
+  assign faq_keys = faq_keys | split: ',' | sort
+  assign has_faqs = false
+  if faq_keys.size > 0
+    assign has_faqs = true
+  endif
 
   assign open_days = ''
   assign day_keys = 'hours_sun,hours_mon,hours_tue,hours_wed,hours_thu,hours_fri,hours_sat' | split: ','
@@ -36,11 +99,15 @@
     endif
   endfor
 %}
-{% if valid_agents > 0 %}
+{% if first_phone != blank %}
   <div
     class="wa-chat wa-chat--{{ block.settings.position }}{% unless block.settings.show_label %} wa-chat--icon-only{% endunless %}{% unless block.settings.show_mobile %} wa-chat--hide-mobile{% endunless %}{% unless block.settings.show_desktop %} wa-chat--hide-desktop{% endunless %}"
-    style="--wa-background: {{ block.settings.background }}; --wa-foreground: {{ block.settings.foreground }}; --wa-bottom: {{ block.settings.bottom_offset }}px;"
+    style="--wa-background: {{ background }}; --wa-foreground: {{ foreground }}; --wa-bottom: {{ block.settings.bottom_offset }}px;"
+    dir="{{ dir }}"
+    lang="{{ request.locale.iso_code }}"
     data-wa-chat
+    data-page-type="{{ template.name }}"
+    data-design-mode="{{ request.design_mode }}"
     data-hours-enabled="{{ block.settings.hours_enabled }}"
     data-days="{{ open_days }}"
     data-open="{{ block.settings.open_time }}"
@@ -62,11 +129,11 @@
         </svg>
         {% if block.settings.show_label %}<span>{{ label | escape }}</span>{% endif %}
       </summary>
-      <div class="wa-chat__panel">
+      <div class="wa-chat__panel" role="region" aria-labelledby="WaChatTitle-{{ block.id }}">
         <div class="wa-chat__header">
-          <p class="wa-chat__title">{{ block.settings.greeting_title | escape }}</p>
-          {% if block.settings.greeting_text != blank %}
-            <p class="wa-chat__subtitle">{{ block.settings.greeting_text | escape }}</p>
+          <p class="wa-chat__title" id="WaChatTitle-{{ block.id }}" tabindex="-1" data-wa-title>{{ greeting_title | escape }}</p>
+          {% if greeting_text != blank %}
+            <p class="wa-chat__subtitle">{{ greeting_text | escape }}</p>
           {% endif %}
           <div class="wa-chat__status" data-wa-status hidden>
             <p class="wa-chat__status-line"><span class="wa-chat__dot" aria-hidden="true"></span><span data-wa-status-text></span></p>
@@ -76,29 +143,73 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
         </div>
-        <div class="wa-chat__body">
-          {% if request.design_mode and agent_errors != blank %}
-            <div class="wa-chat__notice">
-              These WhatsApp numbers aren’t valid and are hidden. Use the country code followed by the number, digits only, with no leading zero (for example 923001234567).
-              <ul>{{ agent_errors }}</ul>
-            </div>
+
+        {% if has_faqs %}
+          <div class="wa-chat__tabs" role="tablist" aria-label="{{ 'wa_chat.tabs.label' | t | escape }}" data-wa-tablist>
+            <button type="button" class="wa-chat__tab" role="tab" id="WaChatTab-chat-{{ block.id }}" aria-controls="WaChatPanel-chat-{{ block.id }}" aria-selected="true" data-wa-tab>
+              {{ 'wa_chat.tabs.chat' | t }}
+            </button>
+            <button type="button" class="wa-chat__tab" role="tab" id="WaChatTab-faq-{{ block.id }}" aria-controls="WaChatPanel-faq-{{ block.id }}" aria-selected="false" tabindex="-1" data-wa-tab>
+              {{ 'wa_chat.tabs.faq' | t }}
+            </button>
+          </div>
+        {% endif %}
+
+        <div class="wa-chat__body" id="WaChatPanel-chat-{{ block.id }}"{% if has_faqs %} role="tabpanel" aria-labelledby="WaChatTab-chat-{{ block.id }}"{% endif %}>
+          {% if request.design_mode %}
+            {% if agent_errors != blank %}
+              <div class="wa-chat__notice">
+                These agents have an invalid WhatsApp number and are hidden. Fix them in the WhatsApp Chat Pro app.
+                <ul>{{ agent_errors }}</ul>
+              </div>
+            {% endif %}
+            {% if contrast_adjusted %}
+              <div class="wa-chat__notice">
+                The icon and text colour didn’t have enough contrast with the background, so a readable colour is used instead.
+              </div>
+            {% endif %}
           {% endif %}
-          <p class="wa-chat__offline" data-wa-offline data-template="{{ block.settings.offline_message | escape }}" hidden></p>
-          <p class="wa-chat__list-heading" data-wa-list-heading>{{ 'wa_chat.agents.online_heading' | t }}</p>
-          <ul class="wa-chat__agents" role="list">
-            {% for i in (1..3) %}
+          <p class="wa-chat__offline" data-wa-offline data-template="{{ offline_message | escape }}" hidden></p>
+
+          {% if question_keys.size > 0 %}
+            <p class="wa-chat__list-heading" id="WaChatQuick-{{ block.id }}">{{ 'wa_chat.quick.heading' | t }}</p>
+            <ul class="wa-chat__chips" role="list" aria-labelledby="WaChatQuick-{{ block.id }}">
+              {% for key in question_keys %}
+                {% liquid
+                  assign handle = key | split: '|' | last
+                  assign question = shop.metaobjects['$app:wa_quick_question'][handle]
+                  assign question_phone = first_phone
+                  assign question_agent = question.agent.value
+                  if question_agent and valid_agent_handles contains question_agent.system.handle
+                    assign question_phone = question_agent.phone.value | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
+                  endif
+                  assign question_message = question.message.value | replace: '[product_title]', product_title | replace: '[product_url]', product_url | url_encode | replace: '+', '%20'
+                %}
+                <li>
+                  <a
+                    class="wa-chat__chip"
+                    href="https://wa.me/{{ question_phone }}?text={{ question_message | escape }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-wa-track="quick_question_click"
+                    data-wa-target="{{ handle | escape }}"
+                  >
+                    {{- question.label.value | escape -}}
+                    <span class="wa-chat__visually-hidden"> ({{ 'wa_chat.agents.opens_whatsapp' | t }})</span>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <p class="wa-chat__list-heading" id="WaChatAgents-{{ block.id }}" data-wa-list-heading>{{ 'wa_chat.agents.online_heading' | t }}</p>
+          <ul class="wa-chat__agents" role="list" aria-labelledby="WaChatAgents-{{ block.id }}">
+            {% for handle in valid_agent_handles %}
               {% liquid
-                assign key_phone = 'agent_' | append: i | append: '_phone'
-                assign key_name = 'agent_' | append: i | append: '_name'
-                assign key_role = 'agent_' | append: i | append: '_role'
-                assign phone = block.settings[key_phone] | strip | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
-                assign non_digits = phone | remove: '0' | remove: '1' | remove: '2' | remove: '3' | remove: '4' | remove: '5' | remove: '6' | remove: '7' | remove: '8' | remove: '9'
-                assign first_digit = phone | slice: 0
-                if phone == blank or non_digits != blank or first_digit == '0' or phone.size < 8 or phone.size > 15
-                  continue
-                endif
-                assign agent_name = block.settings[key_name] | strip | default: 'WhatsApp'
-                assign agent_role = block.settings[key_role] | strip
+                assign agent = shop.metaobjects['$app:wa_agent'][handle]
+                assign phone = agent.phone.value | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')' | remove: '.'
+                assign agent_name = agent.name.value | strip | default: 'WhatsApp'
+                assign agent_role = agent.description.value | strip
               %}
               <li>
                 <a
@@ -106,6 +217,8 @@
                   href="https://wa.me/{{ phone }}{% if encoded_message != blank %}?text={{ encoded_message | escape }}{% endif %}"
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-wa-track="agent_click"
+                  data-wa-target="{{ handle | escape }}"
                 >
                   <span class="wa-chat__avatar" aria-hidden="true">{{ agent_name | slice: 0 | upcase | escape }}</span>
                   <span class="wa-chat__agent-text">
@@ -122,15 +235,60 @@
             {% endfor %}
           </ul>
         </div>
+
+        {% if has_faqs %}
+          <div class="wa-chat__body" id="WaChatPanel-faq-{{ block.id }}" role="tabpanel" aria-labelledby="WaChatTab-faq-{{ block.id }}" hidden>
+            <label class="wa-chat__search-label" for="WaChatSearch-{{ block.id }}">{{ 'wa_chat.faq.search_label' | t }}</label>
+            <input
+              class="wa-chat__search"
+              type="search"
+              id="WaChatSearch-{{ block.id }}"
+              placeholder="{{ 'wa_chat.faq.search_placeholder' | t | escape }}"
+              autocomplete="off"
+              data-wa-faq-search
+              data-result-template="{{ 'wa_chat.faq.result_count' | t: number: '[number]' | escape }}"
+            >
+            <p class="wa-chat__visually-hidden" role="status" aria-live="polite" data-wa-faq-status></p>
+            <ul class="wa-chat__faqs" role="list">
+              {% for key in faq_keys %}
+                {% liquid
+                  assign handle = key | split: '|' | last
+                  assign faq = shop.metaobjects['$app:wa_faq'][handle]
+                  assign search_text = faq.question.value | append: ' ' | append: faq.answer.value | downcase
+                %}
+                <li data-wa-faq data-search="{{ search_text | escape }}">
+                  <details class="wa-chat__faq" data-wa-faq-item data-wa-target="{{ handle | escape }}">
+                    <summary>{{ faq.question.value | escape }}</summary>
+                    <div class="wa-chat__faq-answer">{{ faq.answer.value | escape | newline_to_br }}</div>
+                  </details>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="wa-chat__empty" data-wa-faq-empty hidden>{{ 'wa_chat.faq.no_results' | t }}</p>
+            <div class="wa-chat__faq-contact">
+              <p class="wa-chat__list-heading">{{ 'wa_chat.faq.contact_heading' | t }}</p>
+              <a
+                class="wa-chat__contact"
+                href="https://wa.me/{{ first_phone }}{% if encoded_message != blank %}?text={{ encoded_message | escape }}{% endif %}"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-wa-track="faq_contact_click"
+              >
+                {{ 'wa_chat.faq.contact_button' | t }}
+                <span class="wa-chat__visually-hidden">({{ 'wa_chat.agents.opens_whatsapp' | t }})</span>
+              </a>
+            </div>
+          </div>
+        {% endif %}
       </div>
     </details>
   </div>
 {% elsif request.design_mode %}
   <div class="wa-chat-setup" {{ block.shopify_attributes }}>
     {% if agent_errors == blank %}
-      WhatsApp Chat Pro: add at least one agent’s WhatsApp number in this app embed’s settings.
+      WhatsApp Chat Pro: add at least one agent with a WhatsApp number in the WhatsApp Chat Pro app.
     {% else %}
-      WhatsApp Chat Pro: these WhatsApp numbers aren’t valid. Use the country code followed by the number, digits only, with no leading zero (for example 923001234567).
+      WhatsApp Chat Pro: these agents have an invalid WhatsApp number. Fix them in the WhatsApp Chat Pro app.
       <ul>{{ agent_errors }}</ul>
     {% endif %}
   </div>
@@ -144,102 +302,19 @@
   "javascript": "whatsapp-chat.js",
   "settings": [
     {
-      "type": "header",
-      "content": "Agents",
-      "info": "Each agent opens a chat with their own WhatsApp number. Leave a number blank to hide that agent."
-    },
-    {
-      "type": "text",
-      "id": "agent_1_name",
-      "label": "Agent 1 name",
-      "default": "Sales"
-    },
-    {
-      "type": "text",
-      "id": "agent_1_role",
-      "label": "Agent 1 description",
-      "default": "Questions before you buy"
-    },
-    {
-      "type": "text",
-      "id": "agent_1_phone",
-      "label": "Agent 1 WhatsApp number",
-      "info": "Country code and number, digits only, no leading zero. Example: 923001234567"
-    },
-    {
-      "type": "text",
-      "id": "agent_2_name",
-      "label": "Agent 2 name",
-      "default": "Support"
-    },
-    {
-      "type": "text",
-      "id": "agent_2_role",
-      "label": "Agent 2 description",
-      "default": "Help with products and returns"
-    },
-    {
-      "type": "text",
-      "id": "agent_2_phone",
-      "label": "Agent 2 WhatsApp number",
-      "info": "Country code and number, digits only, no leading zero. Example: 923001234567"
-    },
-    {
-      "type": "text",
-      "id": "agent_3_name",
-      "label": "Agent 3 name",
-      "default": "Order Help"
-    },
-    {
-      "type": "text",
-      "id": "agent_3_role",
-      "label": "Agent 3 description",
-      "default": "Track or change an order"
-    },
-    {
-      "type": "text",
-      "id": "agent_3_phone",
-      "label": "Agent 3 WhatsApp number",
-      "info": "Country code and number, digits only, no leading zero. Example: 923001234567"
-    },
-    {
-      "type": "header",
-      "content": "Greeting"
-    },
-    {
-      "type": "text",
-      "id": "greeting_title",
-      "label": "Title",
-      "default": "Need help?"
-    },
-    {
-      "type": "textarea",
-      "id": "greeting_text",
-      "label": "Message",
-      "default": "Chat with our team on WhatsApp. Pick who you’d like to talk to."
+      "type": "paragraph",
+      "content": "Agents, quick questions, FAQs and widget text are managed in the WhatsApp Chat Pro app. Translate them in Settings › Languages."
     },
     {
       "type": "header",
       "content": "Prefilled message"
     },
     {
-      "type": "textarea",
-      "id": "message",
-      "label": "Default message",
-      "default": "Hi! I have a question about your products."
-    },
-    {
       "type": "checkbox",
       "id": "product_message_enabled",
-      "label": "Use a product message on product pages",
-      "default": true
-    },
-    {
-      "type": "textarea",
-      "id": "product_message",
-      "label": "Product message",
-      "default": "Hi! I have a question about [product_title]: [product_url]",
-      "info": "[product_title] and [product_url] are replaced with the product’s name and link."
+      "label": "Use the product message on product pages",
+      "default": true,
+      "info": "Includes the product’s name and link. Edit the wording in the app under Widget text."
     },
     {
       "type": "header",
@@ -816,21 +891,8 @@
       "default": "store"
     },
     {
-      "type": "textarea",
-      "id": "offline_message",
-      "label": "Offline message",
-      "default": "We’re currently away. Our working hours are [hours]. Leave us a WhatsApp message, and we’ll reply when we’re back.",
-      "info": "[hours] is replaced with your working days and hours."
-    },
-    {
       "type": "header",
       "content": "Button"
-    },
-    {
-      "type": "text",
-      "id": "label",
-      "label": "Button label",
-      "default": "Chat with us"
     },
     {
       "type": "checkbox",
@@ -864,7 +926,8 @@
       "type": "color",
       "id": "foreground",
       "label": "Icon and text colour",
-      "default": "#FFFFFF"
+      "default": "#FFFFFF",
+      "info": "If this colour isn’t readable on the background, black or white is used instead."
     },
     {
       "type": "range",

@@ -10,8 +10,33 @@
       "offline_heading": "Leave a WhatsApp message",
       "opens_whatsapp": "opens WhatsApp"
     },
+    "quick": {
+      "heading": "Quick questions"
+    },
+    "tabs": {
+      "label": "Chat options",
+      "chat": "Chat",
+      "faq": "FAQ"
+    },
+    "faq": {
+      "search_label": "Search questions",
+      "search_placeholder": "Search…",
+      "result_count": "{{ number }} matching questions",
+      "no_results": "No matching questions. Try different words, or chat with us.",
+      "contact_heading": "Still need help?",
+      "contact_button": "Chat on WhatsApp"
+    },
     "general": {
       "close": "Close chat"
+    },
+    "defaults": {
+      "greeting_title": "Need help?",
+      "greeting_text": "Chat with our team on WhatsApp. Pick who you’d like to talk to.",
+      "button_label": "Chat with us",
+      "default_message": "Hi! I have a question about your products.",
+      "product_message": "Hi! I have a question about [product_title]: [product_url]",
+      "offline_message": "We’re currently away. Our working hours are [hours]. Leave us a WhatsApp message, and we’ll reply when we’re back.",
+      "your_products": "your products"
     }
   }
 }
