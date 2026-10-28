@@ -1,1 +1,17 @@
-{}
+{
+  "wa_chat": {
+    "status": {
+      "online": "Online",
+      "away": "Away",
+      "open_24_hours": "Open 24 hours"
+    },
+    "agents": {
+      "online_heading": "Start a chat",
+      "offline_heading": "Leave a WhatsApp message",
+      "opens_whatsapp": "opens WhatsApp"
+    },
+    "general": {
+      "close": "Close chat"
+    }
+  }
+}
