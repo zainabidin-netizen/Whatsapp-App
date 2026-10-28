@@ -57,7 +57,7 @@
   };
 
   const hoursSummary = (root, days, open, close) => {
-    const locale = document.documentElement.lang || undefined;
+    const locale = root.lang || document.documentElement.lang || undefined;
     const dayName = (day) =>
       new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 7 + day)));
     const time = (minutes) =>
@@ -78,7 +78,9 @@
       .map((run) => (run.length > 2 ? `${dayName(run[0])}–${dayName(run[run.length - 1])}` : run.map(dayName).join(', ')))
       .join(', ');
     const timeText = open === close ? root.dataset.open24Label : `${time(open)}–${time(close)}`;
-    return `${dayText}, ${timeText} (${zoneLabel(root.dataset.timeZone, root.dataset.storeOffset)})`;
+    // First-strong isolates keep Latin times and time zones in order inside right-to-left text.
+    const isolate = (value) => `⁨${value}⁩`;
+    return `${dayText}, ${isolate(timeText)} ${isolate(`(${zoneLabel(root.dataset.timeZone, root.dataset.storeOffset)})`)}`;
   };
 
   const applyHours = (root) => {
@@ -102,23 +104,111 @@
     heading.textContent = online ? root.dataset.onlineHeading : root.dataset.offlineHeading;
   };
 
+  const device = () => {
+    if (window.matchMedia('(max-width: 749px)').matches) return 'mobile';
+    if (window.matchMedia('(max-width: 1023px)').matches) return 'tablet';
+    return 'desktop';
+  };
+
+  // Published to Shopify's customer events. The app's web pixel forwards them when the customer allows analytics.
+  const track = (root, type, target = '') => {
+    if (root.dataset.designMode === 'true') return;
+    const analytics = window.Shopify && window.Shopify.analytics;
+    if (!analytics || typeof analytics.publish !== 'function') return;
+    analytics.publish(`wa_chat_pro:${type}`, { target, pageType: root.dataset.pageType, device: device() });
+  };
+
+  const setupTabs = (root) => {
+    const tablist = root.querySelector('[data-wa-tablist]');
+    if (!tablist) return;
+    const tabs = [...tablist.querySelectorAll('[data-wa-tab]')];
+    const select = (tab, focus) => {
+      tabs.forEach((other) => {
+        const selected = other === tab;
+        other.setAttribute('aria-selected', String(selected));
+        other.tabIndex = selected ? 0 : -1;
+        document.getElementById(other.getAttribute('aria-controls')).hidden = !selected;
+      });
+      if (focus) tab.focus();
+    };
+
+    tabs.forEach((tab) => tab.addEventListener('click', () => select(tab, false)));
+    tablist.addEventListener('keydown', (event) => {
+      const index = tabs.indexOf(document.activeElement);
+      if (index < 0) return;
+      const rtl = getComputedStyle(root).direction === 'rtl';
+      const next = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[event.key];
+      let target;
+      if (next) target = tabs[(index + next + tabs.length) % tabs.length];
+      if (event.key === 'Home') target = tabs[0];
+      if (event.key === 'End') target = tabs[tabs.length - 1];
+      if (!target) return;
+      event.preventDefault();
+      select(target, true);
+    });
+  };
+
+  const setupFaqSearch = (root) => {
+    const input = root.querySelector('[data-wa-faq-search]');
+    if (!input) return;
+    const items = [...root.querySelectorAll('[data-wa-faq]')];
+    const empty = root.querySelector('[data-wa-faq-empty]');
+    const status = root.querySelector('[data-wa-faq-status]');
+    const locale = root.lang || undefined;
+
+    input.addEventListener('input', () => {
+      const words = input.value.toLocaleLowerCase(locale).split(/\s+/).filter(Boolean);
+      let matches = 0;
+      items.forEach((item) => {
+        const text = item.dataset.search;
+        const visible = words.every((word) => text.includes(word));
+        item.hidden = !visible;
+        if (visible) matches += 1;
+      });
+      empty.hidden = matches > 0;
+      status.textContent = words.length ? input.dataset.resultTemplate.replace('[number]', matches) : '';
+    });
+
+    root.querySelectorAll('[data-wa-faq-item]').forEach((faq) => {
+      faq.addEventListener('toggle', () => {
+        if (faq.open) track(root, 'faq_open', faq.dataset.waTarget);
+      });
+    });
+  };
+
   const init = (root) => {
     if (root.dataset.waReady) return;
     root.dataset.waReady = 'true';
     const details = root.querySelector('details');
     const summary = details.querySelector('summary');
+    const title = root.querySelector('[data-wa-title]');
     const close = () => {
       details.open = false;
       summary.focus();
     };
 
+    details.addEventListener('toggle', () => {
+      if (!details.open || root.dataset.designMode === 'true') return;
+      track(root, 'widget_open');
+      title.focus({ preventScroll: true });
+    });
     root.querySelector('[data-wa-close]').addEventListener('click', close);
     root.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && details.open) close();
+      if (event.key === 'Escape' && details.open) {
+        event.stopPropagation();
+        close();
+      }
     });
     document.addEventListener('click', (event) => {
       if (details.open && !root.contains(event.target)) details.open = false;
     });
+    root.addEventListener('click', (event) => {
+      const link = event.target.closest('[data-wa-track]');
+      if (link) track(root, link.dataset.waTrack, link.dataset.waTarget || '');
+    });
+
+    setupTabs(root);
+    setupFaqSearch(root);
 
     if (root.dataset.hoursEnabled === 'true') {
       applyHours(root);

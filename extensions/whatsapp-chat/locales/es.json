@@ -1,0 +1,42 @@
+{
+  "wa_chat": {
+    "status": {
+      "online": "En línea",
+      "away": "Ausente",
+      "open_24_hours": "Abierto 24 horas"
+    },
+    "agents": {
+      "online_heading": "Iniciar un chat",
+      "offline_heading": "Deja un mensaje de WhatsApp",
+      "opens_whatsapp": "abre WhatsApp"
+    },
+    "quick": {
+      "heading": "Preguntas rápidas"
+    },
+    "tabs": {
+      "label": "Opciones de chat",
+      "chat": "Chat",
+      "faq": "Preguntas frecuentes"
+    },
+    "faq": {
+      "search_label": "Buscar preguntas",
+      "search_placeholder": "Buscar…",
+      "result_count": "Preguntas coincidentes: {{ number }}",
+      "no_results": "No hay preguntas que coincidan. Prueba con otras palabras o chatea con nosotros.",
+      "contact_heading": "¿Necesitas más ayuda?",
+      "contact_button": "Chatear por WhatsApp"
+    },
+    "general": {
+      "close": "Cerrar chat"
+    },
+    "defaults": {
+      "greeting_title": "¿Necesitas ayuda?",
+      "greeting_text": "Chatea con nuestro equipo por WhatsApp. Elige con quién quieres hablar.",
+      "button_label": "Chatea con nosotros",
+      "default_message": "¡Hola! Tengo una pregunta sobre sus productos.",
+      "product_message": "¡Hola! Tengo una pregunta sobre [product_title]: [product_url]",
+      "offline_message": "Ahora mismo no estamos disponibles. Nuestro horario es [hours]. Déjanos un mensaje de WhatsApp y te responderemos cuando volvamos.",
+      "your_products": "sus productos"
+    }
+  }
+}

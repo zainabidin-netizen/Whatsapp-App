@@ -5,20 +5,134 @@ name = "WhatsApp Chat Pro"
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
 
-[build]
-include_config_on_deploy = true
-automatically_update_urls_on_dev = true
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+# write_pixels and read_customer_events are needed to connect the analytics web pixel.
+scopes = "write_pixels,read_customer_events"
+
+[metaobjects.app.wa_agent]
+name = "WhatsApp agent"
+description = "A team customers can chat with on WhatsApp, such as Sales or Support."
+display_name_field = "name"
+access.admin = "merchant_read_write"
+access.storefront = "public_read"
+capabilities.translatable = true
+
+[metaobjects.app.wa_agent.fields.name]
+name = "Name"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.wa_agent.fields.description]
+name = "Description"
+type = "single_line_text_field"
+
+[metaobjects.app.wa_agent.fields.phone]
+name = "WhatsApp number"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.wa_agent.fields.position]
+name = "Position"
+type = "number_integer"
+
+[metaobjects.app.wa_quick_question]
+name = "WhatsApp quick question"
+description = "A button in the chat widget that opens WhatsApp with a prefilled question."
+display_name_field = "label"
+access.admin = "merchant_read_write"
+access.storefront = "public_read"
+capabilities.translatable = true
+
+[metaobjects.app.wa_quick_question.fields.label]
+name = "Button label"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.wa_quick_question.fields.message]
+name = "Prefilled message"
+type = "multi_line_text_field"
+required = true
+
+[metaobjects.app.wa_quick_question.fields.agent]
+name = "Agent"
+type = "metaobject_reference<$app:wa_agent>"
+
+[metaobjects.app.wa_quick_question.fields.position]
+name = "Position"
+type = "number_integer"
+
+[metaobjects.app.wa_faq]
+name = "WhatsApp FAQ"
+description = "A question and answer shown in the chat widget's FAQ tab."
+display_name_field = "question"
+access.admin = "merchant_read_write"
+access.storefront = "public_read"
+capabilities.translatable = true
+
+[metaobjects.app.wa_faq.fields.question]
+name = "Question"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.wa_faq.fields.answer]
+name = "Answer"
+type = "multi_line_text_field"
+required = true
+
+[metaobjects.app.wa_faq.fields.position]
+name = "Position"
+type = "number_integer"
+
+[metaobjects.app.wa_widget_text]
+name = "WhatsApp widget text"
+description = "Greeting, button label and prefilled messages for the chat widget."
+access.admin = "merchant_read_write"
+access.storefront = "public_read"
+capabilities.translatable = true
+
+[metaobjects.app.wa_widget_text.fields.greeting_title]
+name = "Greeting title"
+type = "single_line_text_field"
+
+[metaobjects.app.wa_widget_text.fields.greeting_text]
+name = "Greeting message"
+type = "multi_line_text_field"
+
+[metaobjects.app.wa_widget_text.fields.button_label]
+name = "Button label"
+type = "single_line_text_field"
+
+[metaobjects.app.wa_widget_text.fields.default_message]
+name = "Default prefilled message"
+type = "multi_line_text_field"
+
+[metaobjects.app.wa_widget_text.fields.product_message]
+name = "Product page prefilled message"
+type = "multi_line_text_field"
+
+[metaobjects.app.wa_widget_text.fields.offline_message]
+name = "Offline message"
+type = "multi_line_text_field"
 
 [webhooks]
 api_version = "2027-01"
 
-[access.admin]
-direct_api_mode = "online"
-embedded_app_direct_api_access = true
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
 
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/compliance"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [auth]
 redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true

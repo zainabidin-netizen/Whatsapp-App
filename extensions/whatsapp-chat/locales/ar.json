@@ -1,0 +1,42 @@
+{
+  "wa_chat": {
+    "status": {
+      "online": "متصل",
+      "away": "غير متاح",
+      "open_24_hours": "مفتوح 24 ساعة"
+    },
+    "agents": {
+      "online_heading": "ابدأ محادثة",
+      "offline_heading": "اترك رسالة على واتساب",
+      "opens_whatsapp": "يفتح واتساب"
+    },
+    "quick": {
+      "heading": "أسئلة سريعة"
+    },
+    "tabs": {
+      "label": "خيارات المحادثة",
+      "chat": "محادثة",
+      "faq": "الأسئلة الشائعة"
+    },
+    "faq": {
+      "search_label": "ابحث في الأسئلة",
+      "search_placeholder": "بحث…",
+      "result_count": "عدد الأسئلة المطابقة: {{ number }}",
+      "no_results": "لا توجد أسئلة مطابقة. جرّب كلمات أخرى أو تحدّث معنا.",
+      "contact_heading": "هل ما زلت بحاجة إلى مساعدة؟",
+      "contact_button": "تحدّث عبر واتساب"
+    },
+    "general": {
+      "close": "إغلاق المحادثة"
+    },
+    "defaults": {
+      "greeting_title": "هل تحتاج إلى مساعدة؟",
+      "greeting_text": "تحدّث مع فريقنا عبر واتساب. اختر من تريد التحدث معه.",
+      "button_label": "تحدّث معنا",
+      "default_message": "مرحبًا! لدي سؤال عن منتجاتكم.",
+      "product_message": "مرحبًا! لدي سؤال عن [product_title]: [product_url]",
+      "offline_message": "نحن غير متاحين حاليًا. ساعات العمل لدينا: [hours]. اترك لنا رسالة على واتساب وسنرد عليك عند عودتنا.",
+      "your_products": "منتجاتكم"
+    }
+  }
+}

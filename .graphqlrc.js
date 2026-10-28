@@ -1,17 +1,26 @@
-const fs = require("node:fs");
-
+import fs from "fs";
+import { ApiVersion } from "@shopify/shopify-app-react-router/server";
+import { shopifyApiProject, ApiType } from "@shopify/api-codegen-preset";
 function getConfig() {
   const config = {
-    projects: {},
+    projects: {
+      default: shopifyApiProject({
+        apiType: ApiType.Admin,
+        apiVersion: ApiVersion.July26,
+        documents: [
+          "./app/**/*.{js,ts,jsx,tsx}",
+          "./app/.server/**/*.{js,ts,jsx,tsx}",
+        ],
+        outputDir: "./app/types",
+      }),
+    },
   };
-
   let extensions = [];
   try {
     extensions = fs.readdirSync("./extensions");
   } catch {
     // ignore if no extensions
   }
-
   for (const entry of extensions) {
     const extensionPath = `./extensions/${entry}`;
     const schema = `${extensionPath}/schema.graphql`;
@@ -23,8 +32,7 @@ function getConfig() {
       documents: [`${extensionPath}/**/*.graphql`],
     };
   }
-
   return config;
 }
-
-module.exports = getConfig();
+const config = getConfig();
+export default config;
