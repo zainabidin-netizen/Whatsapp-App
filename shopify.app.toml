@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "792ea0ba7ee2d6e04b56e07da08bcb9a"
-name = "WhatsApp Chat"
+name = "WhatsApp Chat Pro"
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
 
